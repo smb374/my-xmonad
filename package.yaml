@@ -20,7 +20,9 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/smb374/my-xmonad#readme>
 
 dependencies:
-- base >= 4.7 && < 5
+  - base >= 4.7 && < 5
+  - xmonad >= 0.17
+  - xmonad-contrib >= 0.17
 
 library:
   source-dirs: src

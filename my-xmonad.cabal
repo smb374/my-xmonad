@@ -32,6 +32,8 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , xmonad >=0.17
+    , xmonad-contrib >=0.17
   default-language: Haskell2010
 
 executable my-xmonad-exe
@@ -44,6 +46,8 @@ executable my-xmonad-exe
   build-depends:
       base >=4.7 && <5
     , my-xmonad
+    , xmonad >=0.17
+    , xmonad-contrib >=0.17
   default-language: Haskell2010
 
 test-suite my-xmonad-test
@@ -57,4 +61,6 @@ test-suite my-xmonad-test
   build-depends:
       base >=4.7 && <5
     , my-xmonad
+    , xmonad >=0.17
+    , xmonad-contrib >=0.17
   default-language: Haskell2010
