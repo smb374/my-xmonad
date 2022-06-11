@@ -26,27 +26,10 @@ dependencies:
   - X11 >= 1.10
   - containers
 
-library:
-  source-dirs: src
-
 executables:
-  my-xmonad:
-    main:                Main.hs
-    source-dirs:         app
+  xmonad:
+    main:                xmonad.hs
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - my-xmonad
-
-tests:
-  my-xmonad-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - my-xmonad

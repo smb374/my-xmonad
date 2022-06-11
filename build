@@ -1,0 +1,6 @@
+#!/bin/sh
+echo $1
+exec stack ghc -- \
+    --make xmonad.hs \
+    -i -fforce-recomp -O2 \
+    -main-is main -v0 -o "${1}"
