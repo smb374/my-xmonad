@@ -103,7 +103,7 @@ myKeys conf@XConfig{XMonad.modMask = modm} =
           ((modm, xK_h), sendMessage Shrink)
         , ((modm, xK_l), sendMessage Expand)
         , ((modm, xK_t), withFocused $ windows . W.sink)
-        , ((modm .|. shiftMask, xK_r), spawn "my-xmonad --restart") -- TODO: add rebuild method
+        , ((modm .|. shiftMask, xK_r), spawn "xmonad --recompile; xmonad --restart") -- TODO: add rebuild method
         ]
             <> [ ((modm .|. m, k), windows $ f i)
                | (i, k) <- zip myWorkSpaces [xK_1 .. xK_7]
