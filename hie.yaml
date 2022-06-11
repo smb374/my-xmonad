@@ -1,0 +1,13 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "my-xmonad:lib"
+
+    - path: "./app/Main.hs"
+      component: "my-xmonad:exe:my-xmonad"
+
+    - path: "./app/Paths_my_xmonad.hs"
+      component: "my-xmonad:exe:my-xmonad"
+
+    - path: "./test"
+      component: "my-xmonad:test:my-xmonad-test"
