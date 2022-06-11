@@ -7,7 +7,7 @@ import qualified Data.Map as M
 import Data.Maybe (maybeToList)
 import Data.Monoid ()
 import Graphics.X11.ExtraTypes.XF86 as XF86
-import System.Exit ()
+import System.Exit (exitSuccess)
 import XMonad
 import XMonad.Config.Dmwit (altMask)
 import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
@@ -103,7 +103,8 @@ myKeys conf@XConfig{XMonad.modMask = modm} =
           ((modm, xK_h), sendMessage Shrink)
         , ((modm, xK_l), sendMessage Expand)
         , ((modm, xK_t), withFocused $ windows . W.sink)
-        , ((modm .|. shiftMask, xK_r), spawn "xmonad --recompile; xmonad --restart") -- TODO: add rebuild method
+        , ((modm .|. shiftMask, xK_r), spawn "xmonad --recompile; xmonad --restart")
+        , ((modm .|. shiftMask, xK_x), io exitSuccess)
         ]
             <> [ ((modm .|. m, k), windows $ f i)
                | (i, k) <- zip myWorkSpaces [xK_1 .. xK_7]
