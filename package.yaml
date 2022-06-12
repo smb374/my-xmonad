@@ -25,6 +25,10 @@ dependencies:
   - xmonad-contrib >= 0.17
   - X11 >= 1.10
   - containers
+  - text
+
+# library:
+#   source-dirs: src
 
 executables:
   xmonad:
@@ -33,3 +37,6 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    # dependencies:
+    # - my-xmonad
+

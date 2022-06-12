@@ -1,13 +1,18 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Control.Monad (join, when)
-import Data.List (unwords)
+import Data.Functor ((<&>))
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (maybeToList)
 import Data.Monoid ()
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import Graphics.X11.ExtraTypes.XF86 as XF86
 import System.Exit (exitSuccess)
+import Text.Printf (printf)
 import XMonad
 import XMonad.Config.Dmwit (altMask)
 import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
@@ -56,27 +61,32 @@ maimsave = spawn "maim -u -b 3 -m 5 ~/screenshots/$(date +%Y.%m.%d-%H.%M.%S).png
 launcher :: MonadIO m => m ()
 launcher = spawn "rofi -show combi"
 
-spawnAndUpdate :: MonadIO m => String -> String -> String -> String -> m ()
-spawnAndUpdate path var val cmd = do
-    spawn $ unwords ["eww -c", path, "update", var, val]
-    spawn cmd
+-- eww safe kill client
+safeKill :: X ()
+safeKill = withFocused $ \w -> withDisplay $ \dpy -> do
+    current_class <- liftIO $ getClassHint dpy w <&> resClass
+    case current_class of
+        -- add corresponding class to matching arm
+        "eww-mpd" -> spawn "eww close mpd"
+        _ -> kill
 
 myKeys :: XConfig Layout -> Map (KeyMask, KeySym) (X ())
 myKeys conf@XConfig{XMonad.modMask = modm} =
     M.fromList $
         [ ((modm, xK_Return), spawn myTerminal)
         , ((modm, xK_d), launcher)
+        , ((modm .|. mod1Mask, xK_m), spawn "eww open mpd")
         , -- mpd control
           ((modm, xK_space), spawn "mpc -q toggle")
         , ((modm .|. shiftMask, xK_comma), spawn "mpc -q prev")
         , ((modm .|. shiftMask, xK_period), spawn "mpc -q next")
         , -- volume control
-          ((modm .|. altMask, xK_F1), spawn "amixer -D default Master toggle")
-        , ((modm .|. altMask, xK_F2), spawn "amixer -D default Master 5%-")
-        , ((modm .|. altMask, xK_F3), spawn "amixer -D default Master 5%+")
+          ((modm .|. mod1Mask, xK_F1), spawn "amixer -D pipewire sset Master toggle")
+        , ((modm .|. mod1Mask, xK_F2), spawn "amixer -D pipewire sset Master 5%-")
+        , ((modm .|. mod1Mask, xK_F3), spawn "amixer -D pipewire sset Master 5%+")
         , -- brightness control
-          ((modm .|. altMask, xK_F4), spawn "light -U 10")
-        , ((modm .|. altMask, xK_F5), spawn "light -A 10")
+          ((modm .|. mod1Mask, xK_F4), spawn "light -U 10")
+        , ((modm .|. mod1Mask, xK_F5), spawn "light -A 10")
         , -- Screenshot
           ((0, xK_Print), maimsave)
         , ((modm, xK_Print), maimcopy)
@@ -84,7 +94,7 @@ myKeys conf@XConfig{XMonad.modMask = modm} =
           ((modm, xK_g), sendMessage ToggleGaps)
         , -- bar stuff
           -- kill focused window
-          ((modm .|. shiftMask, xK_q), kill)
+          ((modm .|. shiftMask, xK_q), safeKill)
         , -- Layout management
           ((modm, xK_grave), sendMessage NextLayout)
         , ((modm .|. shiftMask, xK_grave), setLayout $ XMonad.layoutHook conf)
@@ -103,12 +113,14 @@ myKeys conf@XConfig{XMonad.modMask = modm} =
           ((modm, xK_h), sendMessage Shrink)
         , ((modm, xK_l), sendMessage Expand)
         , ((modm, xK_t), withFocused $ windows . W.sink)
-        , ((modm .|. shiftMask, xK_r), spawn "xmonad --recompile; xmonad --restart")
+        , ((modm .|. shiftMask, xK_r), spawn "xmonad --recompile; xmonad --restart; notify-send \"XMonad\" \"XMonad reload complete\"")
         , ((modm .|. shiftMask, xK_x), io exitSuccess)
         ]
-            <> [ ((modm .|. m, k), windows $ f i)
+            <> [ ((modm, k), windows (W.greedyView i) >> ewwUpdateVar "focused_ws" i)
                | (i, k) <- zip myWorkSpaces [xK_1 .. xK_7]
-               , (f, m) <- zip [W.greedyView, W.shift] [0, shiftMask]
+               ]
+            <> [ ((modm .|. shiftMask, k), windows $ W.shift i)
+               | (i, k) <- zip myWorkSpaces [xK_1 .. xK_7]
                ]
 
 myMouseBindings :: XConfig l -> Map (KeyMask, Button) (Window -> X ())
@@ -133,14 +145,21 @@ myManageHook =
     fullscreenManageHook <+> manageDocks
         <+> composeAll
             [ className =? "mpv" --> doFloat
+            , className =? "eww-mpd" --> doFloat
             , className =? "Pavucontrol" --> doFloat
             , resource =? "desktop_window" --> doIgnore
             , resource =? "kdesktop" --> doIgnore
             , isFullscreen --> doFullFloat
             ]
 
+ewwUpdateVar :: MonadIO m => String -> String -> m ()
+ewwUpdateVar var val = spawn $ printf "eww update %s='%s'" var val
+
 myStartupHook = do
     spawn "sh ~/.xprofile"
+    spawn "eww open bar"
+    withWindowSet (ewwUpdateVar "focused_ws" . W.currentTag)
+    return ()
 
 defaults =
     def
@@ -156,7 +175,7 @@ defaults =
         , mouseBindings = myMouseBindings
         , -- hooks, layouts
           manageHook = myManageHook
-        , layoutHook = gaps [(L, 30), (R, 30), (U, 40), (D, 30)] $ spacingRaw True (Border 10 10 10 10) True (Border 10 10 10 10) True $ smartBorders myLayout
+        , layoutHook = gaps [(L, 50), (R, 30), (U, 30), (D, 30)] $ spacingRaw True (Border 10 10 10 10) True (Border 10 10 10 10) True $ smartBorders myLayout
         , handleEventHook = mempty
         , logHook = return ()
         , startupHook = myStartupHook >> addEwmhFullScreen
